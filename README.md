@@ -56,6 +56,16 @@ Puis renseigne dans `.env` :
 
 ## Utilisation
 
+### Interface web (recommandée)
+
+```bash
+python web.py
+```
+
+L'interface s'ouvre automatiquement sur `http://127.0.0.1:8000` : conversation en langage naturel, boutons pause/suivant/précédent/aléatoire, volume et morceau en cours affiché en permanence. Elle n'est accessible que depuis le PC où tourne DJ Neon.
+
+### Terminal
+
 ```bash
 python main.py
 ```
@@ -85,6 +95,8 @@ Les commandes simples (suivant, précédent, pause, reprise, volume, aléatoire)
 ## Architecture
 
 ```
+web.py              Interface web locale (chat + contrôles de lecture)
+static/index.html   Page de l'interface web (thème sombre néon)
 main.py             Interface texte (boucle de conversation)
 brain.py            Cerveau Ollama : compréhension + tool calling
 tools.py            Actions que l'IA peut déclencher (schémas + handlers)
@@ -108,7 +120,6 @@ Le cerveau est isolé derrière `brain.py` : si tu veux passer à l'API Mistral 
 
 ## Feuille de route
 
-- [ ] Interface web conviviale au lieu du terminal
 - [ ] Réactiver et fiabiliser le mode DJ (setlist par thème, annonces d'animateur)
 - [ ] Interface vocale : micro (Whisper) + voix de synthèse (Piper)
 - [ ] Bascule optionnelle vers l'API Mistral pour un cerveau plus puissant

@@ -1,3 +1,4 @@
 spotipy>=2.24.0
 ollama>=0.4.7
 python-dotenv>=1.0.1
+flask>=3.0.0

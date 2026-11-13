@@ -262,6 +262,20 @@ def add_to_queue(uri):
     _call(lambda: sp.add_to_queue(uri))
 
 
+def get_playback_state():
+    sp = get_spotify()
+    state = _call(lambda: sp.current_playback())
+    if not state or not state.get("item"):
+        return {"playing": False, "track": None, "artist": None, "shuffle": None}
+    item = state["item"]
+    return {
+        "playing": state.get("is_playing", False),
+        "track": item["name"],
+        "artist": ", ".join(a["name"] for a in item["artists"]),
+        "shuffle": state.get("shuffle_state"),
+    }
+
+
 def get_current_track():
     sp = get_spotify()
     state = _call(lambda: sp.current_playback())
