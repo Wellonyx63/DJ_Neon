@@ -1,3 +1,5 @@
+import time
+
 import spotipy
 from spotipy.exceptions import SpotifyException
 
@@ -10,6 +12,7 @@ from config import (
 )
 
 _spotify = None
+SEARCH_LIMIT_MAX = 10
 
 
 class SpotifyError(Exception):
@@ -111,8 +114,13 @@ def play_playlist(name):
     return playlist
 
 
-def search_tracks(query, limit=10):
+def _search_limit(limit):
+    return max(1, min(int(limit), SEARCH_LIMIT_MAX))
+
+
+def search_tracks(query, limit=5):
     sp = get_spotify()
+    limit = _search_limit(limit)
     result = _call(lambda: sp.search(q=query, type="track", limit=limit))
     return [
         {
@@ -137,8 +145,83 @@ def play_track(query):
     tracks = search_tracks(query, limit=1)
     if not tracks:
         raise SpotifyError(f"Aucun morceau trouvé pour « {query} ».")
-    play_tracks([tracks[0]["uri"]])
-    return tracks[0]
+    track = tracks[0]
+    device_id = ensure_device()
+    sp = get_spotify()
+    _call(lambda: sp.start_playback(device_id=device_id, uris=[track["uri"]]))
+    time.sleep(2)
+    state = _call(lambda: sp.current_playback())
+    started = (
+        state
+        and state.get("item", {}).get("uri") == track["uri"]
+        and state.get("is_playing", False)
+    )
+    if not started:
+        _call(lambda: sp.start_playback(device_id=device_id, uris=[track["uri"]]))
+    return track
+
+
+def search_playlists(query, limit=5):
+    sp = get_spotify()
+    limit = _search_limit(limit)
+    result = _call(lambda: sp.search(q=query, type="playlist", limit=limit))
+    playlists = []
+    for p in result.get("playlists", {}).get("items", []):
+        if not p:
+            continue
+        info = p.get("items") or p.get("tracks") or {}
+        total = info.get("total", 0) if isinstance(info, dict) else len(info)
+        playlists.append(
+            {
+                "name": p["name"],
+                "owner": (p.get("owner") or {}).get("display_name") or "Spotify",
+                "tracks": total,
+                "uri": p["uri"],
+            }
+        )
+    return playlists
+
+
+def search_artists(query, limit=5):
+    sp = get_spotify()
+    limit = _search_limit(limit)
+    result = _call(lambda: sp.search(q=query, type="artist", limit=limit))
+    return [
+        {
+            "name": a["name"],
+            "genres": ", ".join(a.get("genres", [])[:3]),
+            "uri": a["uri"],
+        }
+        for a in result.get("artists", {}).get("items", [])
+        if a
+    ]
+
+
+def search_albums(query, limit=5):
+    sp = get_spotify()
+    limit = _search_limit(limit)
+    result = _call(lambda: sp.search(q=query, type="album", limit=limit))
+    return [
+        {
+            "name": al["name"],
+            "artist": ", ".join(a["name"] for a in al["artists"]),
+            "uri": al["uri"],
+        }
+        for al in result.get("albums", {}).get("items", [])
+        if al
+    ]
+
+
+def play_public_playlist(query):
+    playlists = search_playlists(query, limit=5)
+    if not playlists:
+        raise SpotifyError(
+            f"Aucune playlist trouvée dans le catalogue Spotify pour « {query} »."
+        )
+    device_id = ensure_device()
+    sp = get_spotify()
+    _call(lambda: sp.start_playback(device_id=device_id, context_uri=playlists[0]["uri"]))
+    return playlists[0]
 
 
 def add_to_queue(uri):
@@ -174,6 +257,12 @@ def playback_control(action):
         _call(lambda: sp.previous_track())
     else:
         raise SpotifyError(f"Action de lecture inconnue : {action}")
+
+
+def set_shuffle(state):
+    device_id = ensure_device()
+    sp = get_spotify()
+    _call(lambda: sp.shuffle(bool(state), device_id=device_id))
 
 
 def set_volume(percent):

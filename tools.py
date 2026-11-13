@@ -80,6 +80,59 @@ def set_volume(percent):
     return f"Volume réglé à {percent} %."
 
 
+def search_music(query, search_type="track", limit=5):
+    limit = max(1, min(int(limit), 10))
+    if search_type == "track":
+        tracks = spotify_client.search_tracks(query, limit=limit)
+        if not tracks:
+            return f"Aucun morceau trouvé pour « {query} »."
+        lines = [f"- « {t['name']} » de {t['artist']} ({t['duration_min']} min)" for t in tracks]
+        return (
+            f"Résultats pour « {query} » :\n"
+            + "\n".join(lines)
+            + "\nPrésente-les à l'utilisateur ; il peut demander à en lancer un avec play_track."
+        )
+    if search_type == "playlist":
+        playlists = spotify_client.search_playlists(query, limit=limit)
+        if not playlists:
+            return f"Aucune playlist trouvée pour « {query} »."
+        lines = [f"- « {p['name']} » de {p['owner']} ({p['tracks']} morceaux)" for p in playlists]
+        return (
+            f"Playlists trouvées pour « {query} » :\n"
+            + "\n".join(lines)
+            + "\nL'utilisateur peut en lancer une avec play_public_playlist."
+        )
+    if search_type == "artist":
+        artists = spotify_client.search_artists(query, limit=limit)
+        if not artists:
+            return f"Aucun artiste trouvé pour « {query} »."
+        lines = [
+            f"- {a['name']}" + (f" ({a['genres']})" if a["genres"] else "")
+            for a in artists
+        ]
+        return f"Artistes trouvés pour « {query} » :\n" + "\n".join(lines)
+    if search_type == "album":
+        albums = spotify_client.search_albums(query, limit=limit)
+        if not albums:
+            return f"Aucun album trouvé pour « {query} »."
+        lines = [f"- « {al['name']} » de {al['artist']}" for al in albums]
+        return f"Albums trouvés pour « {query} » :\n" + "\n".join(lines)
+    return f"Type de recherche inconnu : {search_type} (track, playlist, artist ou album)."
+
+
+def play_public_playlist(query):
+    playlist = spotify_client.play_public_playlist(query)
+    return (
+        f"Lecture lancée : playlist « {playlist['name']} » de {playlist['owner']} "
+        f"({playlist['tracks']} morceaux)."
+    )
+
+
+def set_shuffle(state):
+    spotify_client.set_shuffle(state)
+    return "Mode aléatoire activé." if state else "Mode aléatoire désactivé."
+
+
 TOOL_HANDLERS = {
     "list_playlists": list_playlists,
     "play_playlist": play_playlist,
@@ -87,6 +140,9 @@ TOOL_HANDLERS = {
     "queue_track": queue_track,
     "recommend_tracks": recommend_tracks,
     "dj_mode": dj_mode,
+    "search_music": search_music,
+    "play_public_playlist": play_public_playlist,
+    "set_shuffle": set_shuffle,
     "current_track": current_track,
     "playback_control": playback_control,
     "set_volume": set_volume,
@@ -183,6 +239,73 @@ TOOL_SCHEMAS = [
                     },
                 },
                 "required": ["theme"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_music",
+            "description": (
+                "Rechercher dans tout le catalogue Spotify (pas seulement les playlists de "
+                "l'utilisateur) : morceaux, playlists, artistes ou albums."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Ce qu'il faut rechercher (titre, artiste, genre, ambiance...)",
+                    },
+                    "search_type": {
+                        "type": "string",
+                        "enum": ["track", "playlist", "artist", "album"],
+                        "description": "Type de résultat souhaité (défaut : track)",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Nombre de résultats (défaut : 5, maximum : 10)",
+                    },
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "play_public_playlist",
+            "description": (
+                "Rechercher une playlist dans tout le catalogue Spotify (y compris les playlists "
+                "officielles ou d'autres utilisateurs, non enregistrées par l'utilisateur) et "
+                "lancer la lecture de la meilleure correspondance."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Thème, genre ou nom de la playlist recherchée",
+                    }
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "set_shuffle",
+            "description": "Activer ou désactiver le mode aléatoire (shuffle) de la lecture.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "state": {
+                        "type": "boolean",
+                        "description": "true pour activer le mode aléatoire, false pour le désactiver",
+                    }
+                },
+                "required": ["state"],
             },
         },
     },

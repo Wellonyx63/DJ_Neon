@@ -72,6 +72,9 @@ toi > ajoute One More Time à la file
 toi > qu'est-ce qui passe en ce moment ?
 toi > volume à 40
 toi > propose-moi des morceaux pour une soirée calme
+toi > cherche des morceaux de funk
+toi > lance une playlist funk de Spotify
+toi > mets la lecture en aléatoire
 toi > mode DJ sur le thème des années 80
 ```
 
@@ -98,6 +101,7 @@ Le cerveau est isolé derrière `brain.py` : si tu veux passer à l'API Mistral 
 | « Aucun appareil Spotify détecté » | Ouvre Spotify (appli ou web) et lance une lecture, puis réessaie |
 | Erreur 403 | Vérifie que ton compte est dans **User Management** de l'app, et que tu as Premium |
 | L'IA n'appelle jamais les outils | Utilise un modèle qui supporte le tool calling : `llama3.1:8b`, `mistral-nemo`, `qwen2.5:14b`… |
+| « Invalid limit » sur une recherche | Limite de l'API Spotify réduite à 10 résultats par recherche depuis février 2026 — DJ Neon plafonne automatiquement, ne pas dépasser |
 | Session expirée (401) | Supprime le fichier `.spotify_token_cache` et relance |
 
 ## Feuille de route
