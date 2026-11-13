@@ -17,6 +17,8 @@ SYSTEM_PROMPT = (
     "- Pour un titre précis, utilise play_track : il cherche dans tout le catalogue Spotify.\n"
     "- Ne prétends JAMAIS avoir fait une action sans l'avoir réellement faite avec un outil. "
     "Si un outil renvoie une erreur, dis-le simplement et propose une alternative courte.\n"
+    "- Ne mentionne JAMAIS les outils, leur nom, le JSON ou le fonctionnement technique dans "
+    "tes réponses : parle naturellement, comme un animateur radio humain.\n"
     "- Pour la musique suivante, précédente, pause, reprise, le volume ou l'aléatoire, utilise "
     "playback_control ou set_shuffle — jamais d'autre outil, jamais d'invention.\n"
     "- Le « mode aléatoire intelligent » (smart shuffle) n'existe pas dans l'API Spotify : "
@@ -36,6 +38,35 @@ TRANSPORT_ALIASES = {
 }
 
 TOOL_JSON_RE = re.compile(r"\{(?:[^{}]|\{[^{}]*\})*\}")
+
+PLAY_RE = re.compile(
+    r"^(?:joue|mets|met|lance|écoute|ecoute)(?:[-\s]+(?:moi|nous))?\s+(.+)$", re.IGNORECASE
+)
+ARTICLE_RE = re.compile(r"^(?:du|de la|de l'|des|d')\s+(.+)$", re.IGNORECASE)
+NON_TITRES = (
+    "la lecture", "le morceau", "la musique", "un morceau", "une musique", "quelque chose",
+)
+
+
+def _route_play(message):
+    match = PLAY_RE.match(message)
+    if not match:
+        return None
+    rest = re.sub(r"^moi\s+", "", match.group(1).strip())
+    if not rest or rest.lower() in NON_TITRES:
+        return None
+    if "playlist" in rest:
+        name = re.sub(r"^(?:ma|mon|mes|la|le|les|une)\s+", "", rest)
+        name = re.sub(r"^playlist\s+", "", name, flags=re.IGNORECASE).strip()
+        if not name:
+            return None
+        return tools.play_playlist(name)
+    article = ARTICLE_RE.match(rest)
+    if article and len(rest.split()) <= 6:
+        return tools.play_artist(article.group(1).strip())
+    if len(rest.split()) > 8:
+        return None
+    return tools.play_track(rest)
 
 
 def direct_command(user_message):
@@ -59,6 +90,9 @@ def direct_command(user_message):
             r"(reprends?|relance)(\s+(la|le|la lecture|le morceau|la musique|-la|-le))?", message
         ):
             return tools.playback_control("resume")
+        routed = _route_play(user_message.strip())
+        if routed is not None:
+            return routed
     except Exception as exc:
         return f"⚠️ {exc}"
     return None

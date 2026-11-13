@@ -92,11 +92,23 @@ Commandes spéciales : `/help` (aide), `/quit` (sortir).
 
 Les commandes simples (suivant, précédent, pause, reprise, volume, aléatoire) sont traitées directement, sans passer par le modèle : elles sont instantanées et fiables.
 
+## Lancement automatique (Windows)
+
+Deux scripts sont fournis dans `windows/` (sans fenêtre visible, en arrière-plan) :
+
+- `start_neon_when_spotify.vbs` — attend que Spotify soit lancé, puis démarre DJ Neon
+- `start_neon.vbs` — démarre DJ Neon dès l'ouverture de session
+
+Installation : `Win+R` → tape `shell:startup` → Enter. Dans le dossier qui s'ouvre, colle un **raccourci** vers le script choisi (clic droit sur le script → « Créer un raccourci », puis déplace le raccourci). Au prochain démarrage, DJ Neon se lancera tout seul — l'interface reste disponible sur `http://127.0.0.1:8000`.
+
+Condition : le projet doit rester dans son dossier avec son `.venv` (le script y fait référence).
+
 ## Architecture
 
 ```
 web.py              Interface web locale (chat + contrôles de lecture)
 static/index.html   Page de l'interface web (thème sombre néon)
+windows/            Scripts de lancement automatique (démarrage session ou au lancement de Spotify)
 main.py             Interface texte (boucle de conversation)
 brain.py            Cerveau Ollama : compréhension + tool calling
 tools.py            Actions que l'IA peut déclencher (schémas + handlers)

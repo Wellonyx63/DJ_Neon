@@ -152,11 +152,18 @@ def _is_playing(sp, uri):
 
 
 def play_track(query):
-    tracks = search_tracks(query, limit=1)
-    if not tracks:
-        simplified = re.split(r"\s+(?:de|par|du|by)\s+", query, flags=re.IGNORECASE)[0].strip()
-        if simplified and simplified.lower() != query.strip().lower():
-            tracks = search_tracks(simplified, limit=1)
+    queries = [query.strip()]
+    match = re.match(r"^(.*?)\s+(?:de|par|du|by)\s+(.+)$", query.strip(), flags=re.IGNORECASE)
+    if match:
+        title, artist = match.group(1).strip(), match.group(2).strip()
+        if title and artist:
+            queries.insert(0, f"track:{title} artist:{artist}")
+            queries.append(title)
+    tracks = []
+    for candidate in queries:
+        tracks = search_tracks(candidate, limit=1)
+        if tracks:
+            break
     if not tracks:
         raise SpotifyError(f"Aucun morceau trouvé pour « {query} ».")
     track = tracks[0]
