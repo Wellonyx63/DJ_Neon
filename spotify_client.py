@@ -1,3 +1,4 @@
+import re
 import time
 
 import spotipy
@@ -152,6 +153,10 @@ def _is_playing(sp, uri):
 
 def play_track(query):
     tracks = search_tracks(query, limit=1)
+    if not tracks:
+        simplified = re.split(r"\s+(?:de|par|du|by)\s+", query, flags=re.IGNORECASE)[0].strip()
+        if simplified and simplified.lower() != query.strip().lower():
+            tracks = search_tracks(simplified, limit=1)
     if not tracks:
         raise SpotifyError(f"Aucun morceau trouvé pour « {query} ».")
     track = tracks[0]

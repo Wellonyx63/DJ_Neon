@@ -80,6 +80,8 @@ toi > mets la lecture en aléatoire
 
 Commandes spéciales : `/help` (aide), `/quit` (sortir).
 
+Les commandes simples (suivant, précédent, pause, reprise, volume, aléatoire) sont traitées directement, sans passer par le modèle : elles sont instantanées et fiables.
+
 ## Architecture
 
 ```
@@ -100,7 +102,7 @@ Le cerveau est isolé derrière `brain.py` : si tu veux passer à l'API Mistral 
 | « Ollama est injoignable » | Lance `ollama serve` puis `ollama pull llama3.1:8b` |
 | « Aucun appareil Spotify détecté » | Ouvre Spotify (appli ou web) et lance une lecture, puis réessaie |
 | Erreur 403 | Vérifie que ton compte est dans **User Management** de l'app, et que tu as Premium |
-| L'IA n'appelle jamais les outils | Utilise un modèle qui supporte le tool calling : `llama3.1:8b`, `mistral-nemo`, `qwen2.5:14b`… |
+| L'IA n'appelle jamais les outils, ou raconte n'importe quoi | `llama3.1:8b` gère mal le tool calling : essaie `ollama pull qwen2.5:7b` puis `OLLAMA_MODEL=qwen2.5:7b` dans `.env` |
 | « Invalid limit » sur une recherche | Limite de l'API Spotify réduite à 10 résultats par recherche depuis février 2026 — DJ Neon plafonne automatiquement, ne pas dépasser |
 | Session expirée (401) | Supprime le fichier `.spotify_token_cache` et relance |
 
