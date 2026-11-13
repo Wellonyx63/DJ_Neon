@@ -83,11 +83,14 @@ def _track_brief(track):
 def list_playlists(limit=50):
     sp = get_spotify()
     result = _call(lambda: sp.current_user_playlists(limit=limit))
-    return [
-        {"name": p["name"], "tracks": p["tracks"]["total"], "uri": p["uri"]}
-        for p in result.get("items", [])
-        if p
-    ]
+    playlists = []
+    for p in result.get("items", []):
+        if not p:
+            continue
+        info = p.get("items") or p.get("tracks") or {}
+        total = info.get("total", 0) if isinstance(info, dict) else len(info)
+        playlists.append({"name": p["name"], "tracks": total, "uri": p["uri"]})
+    return playlists
 
 
 def find_playlist(name):
