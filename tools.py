@@ -50,10 +50,13 @@ def recommend_tracks(theme, limit=5):
     )
 
 
-def dj_mode(theme, tracks_count=8):
-    from dj import run_dj_session
-
-    return run_dj_session(theme, tracks_count)
+def play_artist(query):
+    tracks = spotify_client.play_artist(query)
+    first = tracks[0]
+    return (
+        f"Lecture lancée : {len(tracks)} morceaux de {first['artist']}, en commençant par "
+        f"« {first['name']} »."
+    )
 
 
 def current_track():
@@ -129,7 +132,11 @@ def play_public_playlist(query):
 
 
 def set_shuffle(state):
-    spotify_client.set_shuffle(state)
+    if isinstance(state, str):
+        state = state.strip().lower() in (
+            "true", "on", "1", "oui", "yes", "active", "activé", "enable", "enabled",
+        )
+    spotify_client.set_shuffle(bool(state))
     return "Mode aléatoire activé." if state else "Mode aléatoire désactivé."
 
 
@@ -139,7 +146,7 @@ TOOL_HANDLERS = {
     "play_track": play_track,
     "queue_track": queue_track,
     "recommend_tracks": recommend_tracks,
-    "dj_mode": dj_mode,
+    "play_artist": play_artist,
     "search_music": search_music,
     "play_public_playlist": play_public_playlist,
     "set_shuffle": set_shuffle,
@@ -223,22 +230,19 @@ TOOL_SCHEMAS = [
     {
         "type": "function",
         "function": {
-            "name": "dj_mode",
+            "name": "play_artist",
             "description": (
-                "Lancer le mode DJ : une session d'antenne continue sur un thème, avec des morceaux "
-                "enchaînés et des annonces d'animateur radio entre chacun. Bloquant jusqu'à la fin "
-                "de la session ou l'interruption par l'utilisateur."
+                "Lancer immédiatement la lecture des meilleurs morceaux d'un artiste, en cherchant "
+                "dans tout le catalogue Spotify. À utiliser pour « joue du <artiste> » ou "
+                "« mets du <artiste> », même si l'artiste n'est pas dans la bibliothèque de "
+                "l'utilisateur."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "theme": {"type": "string", "description": "Thème de la session DJ"},
-                    "tracks_count": {
-                        "type": "integer",
-                        "description": "Nombre de morceaux dans la setlist (défaut : 8)",
-                    },
+                    "query": {"type": "string", "description": "Nom de l'artiste"}
                 },
-                "required": ["theme"],
+                "required": ["query"],
             },
         },
     },
@@ -302,7 +306,7 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "state": {
                         "type": "boolean",
-                        "description": "true pour activer le mode aléatoire, false pour le désactiver",
+                        "description": "true pour activer le mode aléatoire, false pour le désactiver. Le mode aléatoire intelligent (smart shuffle) n'est pas disponible via l'API.",
                     }
                 },
                 "required": ["state"],

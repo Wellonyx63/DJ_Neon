@@ -7,7 +7,7 @@ Ta radio personnelle, hébergée chez toi : une petite IA qui contrôle ton Spot
 - **Interface texte** dans le terminal, en langage naturel (français)
 - **Contrôle Spotify** uniquement sur demande explicite : playlists, morceaux, file d'attente, volume, pause/suivant/précédent
 - **Recommandations** construites à partir de tes titres likés, tes artistes les plus écoutés et une recherche par thème
-- **Mode DJ** : une session d'antenne continue sur un thème, avec annonces et transitions générées entre les morceaux
+- **Mode DJ** : session d'antenne continue sur un thème, avec annonces et transitions générées entre les morceaux *(en pause — sera repris une fois le reste stabilisé)*
 - **Cerveau 100 % local** via [Ollama](https://ollama.com) — aucune demande ne quitte ta machine (sauf celles destinées à l'API Spotify)
 
 ## Prérequis
@@ -68,6 +68,7 @@ Exemples de demandes :
 toi > montre-moi mes playlists
 toi > lance ma playlist Sport
 toi > mets du Daft Punk
+toi > joue du Johnny Hallyday
 toi > ajoute One More Time à la file
 toi > qu'est-ce qui passe en ce moment ?
 toi > volume à 40
@@ -75,10 +76,9 @@ toi > propose-moi des morceaux pour une soirée calme
 toi > cherche des morceaux de funk
 toi > lance une playlist funk de Spotify
 toi > mets la lecture en aléatoire
-toi > mode DJ sur le thème des années 80
 ```
 
-Commandes spéciales : `/help` (aide), `/quit` (sortir). Pendant une session DJ, `Ctrl+C` fait sortir de l'antenne sans fermer l'application.
+Commandes spéciales : `/help` (aide), `/quit` (sortir).
 
 ## Architecture
 
@@ -106,7 +106,8 @@ Le cerveau est isolé derrière `brain.py` : si tu veux passer à l'API Mistral 
 
 ## Feuille de route
 
-- [ ] Interface vocale : micro (Whisper) + voix de synthèse (Piper) pour le mode DJ
+- [ ] Interface web conviviale au lieu du terminal
+- [ ] Réactiver et fiabiliser le mode DJ (setlist par thème, annonces d'animateur)
+- [ ] Interface vocale : micro (Whisper) + voix de synthèse (Piper)
 - [ ] Bascule optionnelle vers l'API Mistral pour un cerveau plus puissant
-- [ ] Petite interface web au lieu du terminal
 - [ ] Déploiement serveur : service systemd ou conteneur Docker

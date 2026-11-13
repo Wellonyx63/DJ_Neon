@@ -141,6 +141,15 @@ def play_tracks(uris):
     _call(lambda: sp.start_playback(device_id=device_id, uris=list(uris)))
 
 
+def _is_playing(sp, uri):
+    state = _call(lambda: sp.current_playback())
+    return (
+        bool(state)
+        and state.get("item", {}).get("uri") == uri
+        and state.get("is_playing", False)
+    )
+
+
 def play_track(query):
     tracks = search_tracks(query, limit=1)
     if not tracks:
@@ -150,15 +159,34 @@ def play_track(query):
     sp = get_spotify()
     _call(lambda: sp.start_playback(device_id=device_id, uris=[track["uri"]]))
     time.sleep(2)
-    state = _call(lambda: sp.current_playback())
-    started = (
-        state
-        and state.get("item", {}).get("uri") == track["uri"]
-        and state.get("is_playing", False)
-    )
-    if not started:
+    if not _is_playing(sp, track["uri"]):
         _call(lambda: sp.start_playback(device_id=device_id, uris=[track["uri"]]))
+        time.sleep(2)
+    if not _is_playing(sp, track["uri"]):
+        _call(lambda: sp.add_to_queue(track["uri"]))
+        _call(lambda: sp.next_track(device_id=device_id))
+        time.sleep(2)
+        if not _is_playing(sp, track["uri"]):
+            raise SpotifyError(
+                "La lecture n'a pas démarré sur l'appareil. Vérifie que Spotify est ouvert "
+                "et actif sur un appareil, puis réessaie."
+            )
     return track
+
+
+def play_artist(query):
+    artist_name = query.strip()
+    tracks = search_tracks(f"artist:{artist_name}", limit=SEARCH_LIMIT_MAX)
+    if not tracks:
+        tracks = search_tracks(artist_name, limit=SEARCH_LIMIT_MAX)
+    if not tracks:
+        artists = search_artists(artist_name, limit=1)
+        if artists:
+            tracks = search_tracks(f"artist:{artists[0]['name']}", limit=SEARCH_LIMIT_MAX)
+    if not tracks:
+        raise SpotifyError(f"Aucun morceau de « {artist_name} » trouvé sur Spotify.")
+    play_tracks([t["uri"] for t in tracks])
+    return tracks
 
 
 def search_playlists(query, limit=5):
